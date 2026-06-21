@@ -1,0 +1,38 @@
+name: AI Auto Coder Agent
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  ngoding-otomatis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write 
+
+    steps:
+      - name: Ambil Source Code Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Aider (AI VCS Tool)
+        run: |
+          pip install aider-chat
+
+      - name: AI Mulai Menulis Kode & Commit Otomatis
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          git config --global user.name "ai-developer-bot"
+          git config --global user.email "ai-bot@users.noreply.github.com"
+          
+          # AI akan membaca instruksi dari Issue dan langsung memodifikasi kode
+          aider --model gemini/gemini-2.5-flash --message "${{ github.event.issue.body }}" --auto-commit --yes
+
+      - name: Push Hasil Kode ke Repositori
+        run: |
+          git push origin main
