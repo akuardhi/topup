@@ -1,36 +1,40 @@
-# This is a basic workflow to help you get started with Actions
+name: AI Auto Coder Agent
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  issues:
+    types: [opened]
+  workflow_dispatch: # Ini tambahan agar muncul tombol manual
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  ngoding-otomatis:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Ambil Source Code Repo
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Install Aider (AI VCS Tool)
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          pip install aider-chat
+
+      - name: AI Mulai Menulis Kode & Commit Otomatis
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          git config --global user.name "ai-developer-bot"
+          git config --global user.email "ai-bot@users.noreply.github.com"
+          
+          # Jika dijalankan manual, AI akan mengecek status repo. Jika lewat Issue, akan baca perintahnya.
+          PESAN="${{ github.event.issue.body || 'Tolong rapikan kode ini' }}"
+          aider --model gemini/gemini-2.5-flash --message "$PESAN" --auto-commit --yes
+
+      - name: Push Hasil Kode ke Repositori
+        run: |
+          git push origin main
